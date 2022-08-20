@@ -1,12 +1,15 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(raylib-test VERSION 0.1.0)
+project(cobra-map-editor VERSION 0.1.0)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 add_subdirectory(lib/raylib)
 
-file(GLOB srcfiles "src/*.cpp" "src/*.c" "src/*.hpp" "src/*.h" "lib/imgui/*.cpp" "lib/imgui/*.h")
+file(GLOB srcfiles "src/*.cpp" "src/*.c" "src/*.hpp" "src/*.h"
+		"lib/imgui/*.cpp" "lib/imgui/*.h"
+		"lib/rlImGui/*.h" "lib/rlImGui/*.cpp" 
+		"lib/rlFPCamera/*.h" "lib/rlFPCamera/rlFPCamera.cpp")
 
-add_executable(raylib-test ${srcfiles})
-include_directories(src/ lib/imgui/ ${RAYLIB_INCLUDE_DIR})
-target_link_libraries(raylib-test raylib)
+add_executable(cobra-map-editor ${srcfiles})
+include_directories(src/ lib/imgui/ lib/rlImGui/ lib/rlFPCamera/ ${RAYLIB_INCLUDE_DIR})
+target_link_libraries(cobra-map-editor raylib)
 
