@@ -4,3 +4,9 @@
 [submodule "lib/imgui"]
 	path = lib/imgui
 	url = git@github.com:ocornut/imgui.git
+[submodule "lib/WMT"]
+	path = lib/WMT
+	url = https://github.com/maxsupermanhd/WMT.git
+[submodule "data/texpages"]
+	path = data/texpages
+	url = https://github.com/Warzone2100/data-texpages.git

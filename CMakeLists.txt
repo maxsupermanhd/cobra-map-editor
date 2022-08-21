@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(cobra-map-editor VERSION 0.1.0)
 
+set(WMT_BUILD_EXECUTABLE OFF CACHE BOOL "Build WMT executable" FORCE)
+set(WMT_INCLUDE_LOG OFF CACHE BOOL "Build WMT and log library" FORCE)
+add_subdirectory(lib/WMT)
+
 set(OpenGL_GL_PREFERENCE LEGACY)
 add_subdirectory(lib/raylib)
 
@@ -11,7 +15,7 @@ file(GLOB srcfiles "src/*.cpp" "src/*.c" "src/*.hpp" "src/*.h"
 
 add_executable(cobra-map-editor ${srcfiles})
 include_directories(src/ lib/imgui/ lib/rlImGui/ lib/rlFPCamera/ ${RAYLIB_INCLUDE_DIR})
-target_link_libraries(cobra-map-editor raylib)
+target_link_libraries(cobra-map-editor raylib libwmt)
 
 add_custom_command( TARGET cobra-map-editor PRE_BUILD
 					COMMAND ${CMAKE_COMMAND} -E copy_directory
