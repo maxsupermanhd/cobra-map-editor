@@ -13,3 +13,6 @@ add_executable(cobra-map-editor ${srcfiles})
 include_directories(src/ lib/imgui/ lib/rlImGui/ lib/rlFPCamera/ ${RAYLIB_INCLUDE_DIR})
 target_link_libraries(cobra-map-editor raylib)
 
+add_custom_command( TARGET cobra-map-editor PRE_BUILD
+					COMMAND ${CMAKE_COMMAND} -E copy_directory
+					${CMAKE_SOURCE_DIR}/data/ $<TARGET_FILE_DIR:cobra-map-editor>/data/)
