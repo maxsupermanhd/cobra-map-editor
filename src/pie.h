@@ -64,5 +64,6 @@ public:
 	~PIEmodel();
 };
 
+PIEmodel* GetModel(std::string filename);
 void FreeModels();
-bool LoadFromPIE(std::string filepath, Mesh* ret);
+bool LoadMeshFromPIE(PIEmodel* model, Mesh* ret);

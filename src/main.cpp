@@ -9,15 +9,19 @@
 #include "pie.h"
 #include "textures.h"
 #include "maplibshiz.h"
+#include "world.h"
 
 int main() {
+	std::unique_ptr<WzMap::MapPackage> wzmap = loadMapPackage("./data/2c-Tiny_VautEdition.wz");
+	if(wzmap == nullptr) {
+		TraceLog(LOG_FATAL, "failed to load map");
+	}
+
 	InitWindow(800, 450, "raylib [core] example - basic window");
 	ShowCursor();
 	SetTargetFPS(85);
 	SetWindowMonitor(0);
 	rlImGuiSetup(true);
-
-	std::unique_ptr<WzMap::MapPackage> wzmap = loadMapPackage("./data/8c-Stone-Jungle-E.wz");
 
 	rlFPCamera cam;
 	rlFPCameraInit(&cam, 75, (Vector3) { 0, 5, 0 });
@@ -27,25 +31,10 @@ int main() {
 	cam.MouseSensitivity = 100;
 	cam.FarPlane = 5000;
 
-	Mesh m = { 0 };
-	if(!LoadFromPIE("./data/blbrbgen.pie", &m)) {
-		abort();
-	}
+	World w = World();
 
-	Material mat = LoadMaterialDefault();
-	mat.maps[MATERIAL_MAP_DIFFUSE].texture = GetTexture("./data/page-7-barbarians-arizona.png");
-
-	for(unsigned int i = 0; i < m.vertexCount; i++) {
-		m.texcoords[i*2+0] /= mat.maps[MATERIAL_MAP_DIFFUSE].texture.height;
-		m.texcoords[i*2+1] /= mat.maps[MATERIAL_MAP_DIFFUSE].texture.width;
-	}
-
-	Shader alphaDiscardShader = LoadShader(NULL, "data/discard_alpha.fs");
-	mat.shader = alphaDiscardShader;
-
-	Matrix i = MatrixIdentity();
-
-	UploadMesh(&m, false);
+	int genid = w.AddObject("./data/blbrbgen.pie");
+	TraceLog(LOG_INFO, "Loaded object, id: %d", genid);
 
 	while(!WindowShouldClose()) {
 		cam.UseMouse = IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
@@ -54,7 +43,7 @@ int main() {
 			ClearBackground(DARKGRAY);
 			rlFPCameraBeginMode3D(&cam);
 				DrawGrid(20, 10.0f);
-				DrawMesh(m, mat, i);
+				w.Draw();
 			rlFPCameraEndMode3D();
 			DrawFPS(10, 25);
 			rlImGuiBegin();
@@ -65,7 +54,7 @@ int main() {
 	}
 
 	rlImGuiShutdown();
-	UnloadShader(alphaDiscardShader);
+
 	UnloadTextures();
 
 	CloseWindow();

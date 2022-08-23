@@ -348,7 +348,7 @@ PIEmodel* GetModel(std::string filename) {
 	PIEmodel* l = new PIEmodel();
 	if(!l->ReadPIE(filename)) {
 		TraceLog(LOG_ERROR, "Failed to load model [%s]", filename.c_str());
-		return nullptr;
+		return NULL;
 	}
 	loaded_models[filename] = l;
 	return l;
@@ -362,9 +362,8 @@ void FreeModels() {
 }
 
 
-bool LoadFromPIE(std::string filepath, Mesh* ret) {
-	PIEmodel* model = GetModel(filepath);
-	if(model == nullptr) {
+bool LoadMeshFromPIE(PIEmodel* model, Mesh* ret) {
+	if(model == nullptr || ret == nullptr) {
 		return false;
 	}
 	if(model->levelscount <= 0) {
@@ -395,10 +394,10 @@ bool LoadFromPIE(std::string filepath, Mesh* ret) {
 	for(unsigned int i = 0; i < model->levels[0].polygonscount; i++) {
 		PIEpolygon polygon = model->levels[0].polygons[i];
 		if(polygon.pcount != 3) {
-			TraceLog(LOG_ERROR, "Object3d does not support pcount other than 3, filename [%s]", filepath.c_str());
+			TraceLog(LOG_ERROR, "Object3d does not support pcount other than 3");
 			MemFree(ret->vertices);
 			MemFree(ret->texcoords);
-			return ret;
+			return false;
 		}
 		for(int j = 0; j < polygon.pcount; j++) {
 			ret->vertices[filledVertex+0] = model->levels[0].points[polygon.porder[j]].x;
@@ -415,6 +414,5 @@ bool LoadFromPIE(std::string filepath, Mesh* ret) {
 			filledTex += 2;
 		}
 	}
-	TraceLog(LOG_INFO, "Loading done");
-	return ret;
+	return true;
 }

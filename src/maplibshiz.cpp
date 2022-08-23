@@ -44,7 +44,7 @@ std::unique_ptr<WzMap::MapPackage> loadMapPackage(const char* pathToWzPackage) {
 		TraceLog(LOG_ERROR, "Failed to open map archive: %s", pathToWzPackage);
 		return nullptr;
 	}
-	auto wzMapPackage = WzMap::MapPackage::loadPackage("/", logger, zipArchive);
+	auto wzMapPackage = WzMap::MapPackage::loadPackage("", logger, zipArchive);
 	if (!wzMapPackage) {
 		TraceLog(LOG_ERROR, "Failed to load map archive package");
 		return nullptr;

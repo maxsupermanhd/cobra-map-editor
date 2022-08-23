@@ -3,17 +3,28 @@
 #include <raylib.h>
 
 #include <vector>
+#include <string>
 
-typedef struct WorldObject {
+class WorldObject {
+public:
+	int id;
+	std::string name;
+	std::string filepath;
 	Mesh mesh;
 	Material material;
 	Vector3 position;
 	Vector3 rotation;
 	float scale;
-} WorldObject;
+};
 
-typedef struct World {
+class World {
+private:
+	int nextObjectId = 1;
+public:
+	Shader alphaDiscardShader;
 	std::vector<WorldObject> objects;
-} World;
-
-void DrawWorld(World* w);
+	World();
+	~World();
+	int AddObject(std::string filepath);
+	void Draw();
+};
