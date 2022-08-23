@@ -1,11 +1,13 @@
 #include "pie.h"
 
-#include "raylib.h"
+#include <raylib.h>
+
+#include "misc.h"
+
 #include <string>
 #include <cstring>
 #include <map>
 #include <errno.h>
-#include "misc.h"
 
 void PIElevel::InitAtZero() {
 	this->points = nullptr;

@@ -1,12 +1,14 @@
 #include <stdio.h>
 
-#include "raylib.h"
-#include "rlgl.h"
-#include "imgui.h"
-#include "rlImGui.h"
-#include "rlFPCamera.h"
+#include <raylib.h>
+#include <rlgl.h>
+#include <imgui.h>
+#include <rlImGui.h>
+#include <rlFPCamera.h>
+
 #include "pie.h"
 #include "textures.h"
+#include "maplibshiz.h"
 
 int main() {
 	InitWindow(800, 450, "raylib [core] example - basic window");
@@ -14,6 +16,8 @@ int main() {
 	SetTargetFPS(85);
 	SetWindowMonitor(0);
 	rlImGuiSetup(true);
+
+	std::unique_ptr<WzMap::MapPackage> wzmap = loadMapPackage("./data/8c-Stone-Jungle-E.wz");
 
 	rlFPCamera cam;
 	rlFPCameraInit(&cam, 75, (Vector3) { 0, 5, 0 });

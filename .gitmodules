@@ -4,3 +4,7 @@
 [submodule "lib/imgui"]
 	path = lib/imgui
 	url = git@github.com:ocornut/imgui.git
+[submodule "lib/warzone2100"]
+	path = lib/warzone2100
+	url = https://github.com/Warzone2100/warzone2100.git
+	shallow = true

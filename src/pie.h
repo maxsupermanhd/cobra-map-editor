@@ -1,6 +1,7 @@
 #pragma once
 
-#include "raylib.h"
+#include <raylib.h>
+
 #include <string>
 
 struct PIEpolygon {

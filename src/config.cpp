@@ -1,7 +1,7 @@
 #include "config.h"
 
 #include <libconfig.h>
-#include "raylib.h"
+#include <raylib.h>
 
 #include <stdlib.h>
 #include <filesystem>

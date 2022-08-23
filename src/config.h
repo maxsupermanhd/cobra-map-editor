@@ -12,3 +12,5 @@ configuration conf;
 
 bool LoadConfig();
 bool SaveConfig();
+
+std::string GetAppConfigDir();

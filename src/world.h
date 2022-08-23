@@ -1,8 +1,8 @@
 #pragma once
 
-#include "raylib.h"
+#include <raylib.h>
+
 #include <vector>
-#include "wmt.hpp"
 
 typedef struct WorldObject {
 	Mesh mesh;
