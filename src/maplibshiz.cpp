@@ -38,7 +38,7 @@ private:
 
 std::shared_ptr<MapToolDebugLogger> logger = std::make_shared<MapToolDebugLogger>(MapToolDebugLogger(true));
 
-static std::unique_ptr<WzMap::MapPackage> loadMapPackage(const char* pathToWzPackage) {
+std::unique_ptr<WzMap::MapPackage> loadMapPackage(const char* pathToWzPackage) {
 	auto zipArchive = WzMapZipIO::openZipArchiveFS(pathToWzPackage);
 	if (!zipArchive) {
 		TraceLog(LOG_ERROR, "Failed to open map archive: %s", pathToWzPackage);

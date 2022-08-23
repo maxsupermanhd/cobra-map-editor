@@ -4,4 +4,4 @@
 
 #include <memory>
 
-static std::unique_ptr<WzMap::MapPackage> loadMapPackage(const char* pathToWzPackage);
+std::unique_ptr<WzMap::MapPackage> loadMapPackage(const char* pathToWzPackage);
