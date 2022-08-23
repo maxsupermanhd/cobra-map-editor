@@ -7,7 +7,6 @@
 #include "rlFPCamera.h"
 #include "pie.h"
 #include "textures.h"
-#include "wmt.hpp"
 
 int main() {
 	InitWindow(800, 450, "raylib [core] example - basic window");
@@ -15,10 +14,6 @@ int main() {
 	SetTargetFPS(85);
 	SetWindowMonitor(0);
 	rlImGuiSetup(true);
-
-	WZmap* level = (WZmap*)malloc(sizeof(WZmap));
-	WMT_ReadMap((char*)"./data/8c-Stone-Jungle-E.wz", level);
-	TraceLog(LOG_INFO, "Map version: %d", level->mapver);
 
 	rlFPCamera cam;
 	rlFPCameraInit(&cam, 75, (Vector3) { 0, 5, 0 });
@@ -72,8 +67,6 @@ int main() {
 	CloseWindow();
 
 	FreeModels();
-
-	WMT_FreeMap(level);
 
 	return 0;
 }
