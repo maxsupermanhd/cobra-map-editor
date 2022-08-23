@@ -7,7 +7,67 @@
 #include "rlFPCamera.h"
 #include "pie.h"
 #include "textures.h"
-#include "wmt.hpp"
+
+#include <wzmaplib/map.h>
+#include <wzmaplib/map_package.h>
+#include <ZipIOProvider.h>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+class MapToolDebugLogger : public WzMap::LoggingProtocol
+{
+public:
+	MapToolDebugLogger(bool verbose)
+	: verbose(verbose)
+	{ }
+	virtual ~MapToolDebugLogger() { }
+	virtual void printLog(WzMap::LoggingProtocol::LogLevel level, const char *function, int line, const char *str) override
+	{
+		std::ostream* pOutputStream = &(std::cout);
+		if (level == WzMap::LoggingProtocol::LogLevel::Error)
+		{
+			pOutputStream = &(std::cerr);
+		}
+		std::string levelStr;
+		switch (level)
+		{
+			case WzMap::LoggingProtocol::LogLevel::Info_Verbose:
+			case WzMap::LoggingProtocol::LogLevel::Info:
+				if (!verbose) { return; }
+				levelStr = "INFO";
+				break;
+			case WzMap::LoggingProtocol::LogLevel::Warning:
+				levelStr = "WARNING";
+				break;
+			case WzMap::LoggingProtocol::LogLevel::Error:
+				levelStr = "ERROR";
+				break;
+		}
+		(*pOutputStream) << levelStr << ": [" << function << ":" << line << "] " << str << std::endl;
+	}
+private:
+	bool verbose = false;
+};
+
+static std::unique_ptr<MapPackage> loadMapPackage(const char* pathToWzPackage, std::shared_ptr<WzMap::LoggingProtocol> logger)
+{
+	auto zipArchive = WzMapZipIO::openZipArchiveFS(pathToWzPackage);
+	if (!zipArchive)
+	{
+		std::cerr << "Failed to open map archive file: " << mapArchive << std::endl;
+		return nullopt;
+	}
+
+	auto wzMapPackage = WzMap::MapPackage::loadPackage(mapPackageContentsPath, logger, mapIO);
+	if (!wzMapPackage)
+	{
+		std::cerr << "Failed to load map archive package from: " << mapPackageContentsPath << std::endl;
+		return nullopt;
+	}
+
+	return wzMapPackage;
+}
 
 int main() {
 	InitWindow(800, 450, "raylib [core] example - basic window");
@@ -16,9 +76,27 @@ int main() {
 	SetWindowMonitor(0);
 	rlImGuiSetup(true);
 
-	WZmap* level = (WZmap*)malloc(sizeof(WZmap));
-	WMT_ReadMap((char*)"./data/8c-Stone-Jungle-E.wz", level);
-	TraceLog(LOG_INFO, "Map version: %d", level->mapver);
+	bool verboseMapLogging = true;
+	auto mapLogger = std::make_shared<MapToolDebugLogger>(verboseMapLogging);
+	auto mapPackage = loadMapPackage("./data/8c-Stone-Jungle-E.wz", mapLogger);
+	if (!mapPackage)
+	{
+		// Failed to load map package
+		abort();
+	}
+	auto loadedMap = mapPackage->loadMap(0, logger);
+	if (!loadedMap)
+	{
+		// Failed to load map
+		abort();
+	}
+	auto loadedMapFormat = loadedMap->loadedMapFormat();
+	if (!loadedMapFormat.has_value())
+	{
+		// Failure loading some or all of map data
+		abort();
+	}
+	TraceLog(LOG_INFO, "Map format: %d", (int)loadedMapFormat.value());
 
 	rlFPCamera cam;
 	rlFPCameraInit(&cam, 75, (Vector3) { 0, 5, 0 });
@@ -72,8 +150,6 @@ int main() {
 	CloseWindow();
 
 	FreeModels();
-
-	WMT_FreeMap(level);
 
 	return 0;
 }
