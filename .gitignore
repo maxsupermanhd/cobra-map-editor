@@ -1,2 +1,5 @@
 .vscode
 build*
+
+# Temp files on various platforms
+.DS_Store
