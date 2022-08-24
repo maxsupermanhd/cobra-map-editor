@@ -24,7 +24,7 @@ public:
 	Shader alphaDiscardShader;
 	std::vector<WorldObject> objects;
 	World();
-	~World();
+	void Unload();
 	int AddObject(std::string filepath);
 	void Draw();
 };

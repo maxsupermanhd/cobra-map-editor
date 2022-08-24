@@ -30,7 +30,7 @@ void PIElevel::InitAtZero() {
 
 PIElevel::~PIElevel() {
 	if(this->points) {
-		free(points);
+		free(this->points);
 	}
 	if(this->normals) {
 		free(this->normals);
@@ -356,7 +356,7 @@ PIEmodel* GetModel(std::string filename) {
 
 void FreeModels() {
 	for(auto s : loaded_models) {
-		delete loaded_models[s.first];
+		loaded_models[s.first]->~PIEmodel();
 		loaded_models.erase(s.first);
 	}
 }

@@ -57,6 +57,8 @@ int main() {
 
 	UnloadTextures();
 
+	w.Unload();
+
 	CloseWindow();
 
 	FreeModels();

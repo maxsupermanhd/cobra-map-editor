@@ -36,7 +36,7 @@ World::World() {
 	this->alphaDiscardShader = LoadShaderFromMemory(NULL, alphaDiscardShaderSrc);
 }
 
-World::~World() {
+void World::Unload() {
 	UnloadShader(this->alphaDiscardShader);
 }
 
