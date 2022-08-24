@@ -30,3 +30,5 @@ inline int sscanf(std::string a, const char* format, ...) {
     va_end(args);
     return r;
 }
+
+void loggingCallback(int logLevel, const char *text, va_list args);

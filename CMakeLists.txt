@@ -21,11 +21,12 @@ find_package(config REQUIRED)
 
 file(GLOB srcfiles "src/*.cpp" "src/*.c" "src/*.hpp" "src/*.h"
 		"lib/imgui/*.cpp" "lib/imgui/*.h"
+		"lib/imgui/misc/cpp/*.cpp" "lib/imgui/misc/cpp/*.h"
 		"lib/rlImGui/*.h" "lib/rlImGui/*.cpp" 
 		"lib/rlFPCamera/*.h" "lib/rlFPCamera/rlFPCamera.cpp")
 
 add_executable(cobra-map-editor ${srcfiles})
-include_directories(src/ lib/imgui/ lib/rlImGui/ lib/rlFPCamera/ ${RAYLIB_INCLUDE_DIR} ${LIBCONFIG_INCLUDE_DIRS})
+include_directories(src/ lib/imgui/ lib/imgui/misc/cpp/ lib/rlImGui/ lib/rlFPCamera/ ${RAYLIB_INCLUDE_DIR} ${LIBCONFIG_INCLUDE_DIRS})
 target_link_libraries(cobra-map-editor raylib wzmaplib ZipIOProvider ${LIBCONFIG_LIBRARIES} ${PHYSFS_LIBRARY})
 
 add_custom_command( TARGET cobra-map-editor PRE_BUILD

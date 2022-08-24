@@ -44,3 +44,11 @@ bool equalstr(char* s1, const char* s2) {
 	}
 	return true;
 }
+
+void loggingCallback(int logLevel, const char *text, va_list args) {
+	const char* l[] = {"ALL","TRACE","DEBUG","INFO","WARNING","ERROR","FATAL","NONE"};
+	printf("%s: ", l[logLevel]);
+	vprintf(text, args);
+	putchar('\n');
+}
+
