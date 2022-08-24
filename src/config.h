@@ -1,14 +1,16 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-std::string appconfigfilename = "cobraeditor.conf";
+extern std::string appconfigfilename;
 
 typedef struct configuration {
 	std::string wzdata = "";
+	std::vector<std::string> mountpaths;
 } configuration;
 
-configuration conf;
+extern configuration conf;
 
 bool LoadConfig();
 bool SaveConfig();

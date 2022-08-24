@@ -5,19 +5,36 @@
 #include <imgui.h>
 #include <rlImGui.h>
 #include <rlFPCamera.h>
+#include <physfs.h>
 
 #include "pie.h"
 #include "textures.h"
 #include "maplibshiz.h"
 #include "world.h"
+#include "config.h"
 
-int main() {
+int main(int argc, char** argv) {
 	std::unique_ptr<WzMap::MapPackage> wzmap = loadMapPackage("./data/2c-Tiny_VautEdition.wz");
 	if(wzmap == nullptr) {
 		TraceLog(LOG_FATAL, "failed to load map");
 	}
 
-	InitWindow(800, 450, "raylib [core] example - basic window");
+	if(!PHYSFS_init(argv[0])) {
+		TraceLog(LOG_FATAL, "Failed to init physfs");
+	}
+
+	if(!LoadConfig()) {
+		TraceLog(LOG_WARNING, "Failed to load config!");
+	}
+
+	if(!PHYSFS_mount((conf.wzdata + "base.wz").c_str(), NULL, 0)) {
+		TraceLog(LOG_ERROR, "Failed to mount base.wz");
+	}
+	if(!PHYSFS_mount((conf.wzdata + "mp.wz").c_str(), NULL, 0)) {
+		TraceLog(LOG_ERROR, "Failed to mount mp.wz");
+	}
+
+	InitWindow(800, 450, "Cobra map editor");
 	ShowCursor();
 	SetTargetFPS(85);
 	SetWindowMonitor(0);
@@ -62,6 +79,12 @@ int main() {
 	CloseWindow();
 
 	FreeModels();
+
+	if(!PHYSFS_deinit()) {
+		TraceLog(LOG_ERROR, "Failed to deinit physfs");
+	}
+
+	SaveConfig();
 
 	return 0;
 }
