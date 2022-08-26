@@ -6,7 +6,7 @@
 #include <cstring>
 #include <errno.h>
 
-char* ReadPHYSFSFileLength(std::string path, signed long long& len) {
+char* ReadPHYSFSFile(std::string path, signed long long* len) {
 	PHYSFS_File *f = PHYSFS_openRead(path.c_str());
 	if(f == NULL) {
 		TraceLog(LOG_ERROR, "Failed to open file %s (physfs): %s", path.c_str(), PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
@@ -20,7 +20,9 @@ char* ReadPHYSFSFileLength(std::string path, signed long long& len) {
 		}
 		return NULL;
 	}
-	len = l;
+	if(len != NULL) {
+		*len = l;
+	}
 	char* buf = (char*)malloc(l+1);
 	if(buf == NULL) {
 		TraceLog(LOG_ERROR, "Failed to allocate buffer of size %ld for file %s: %s", l, path.c_str(), strerror(errno));
@@ -42,10 +44,4 @@ char* ReadPHYSFSFileLength(std::string path, signed long long& len) {
 		TraceLog(LOG_ERROR, "Failed to close file %s (physfs): %s", path.c_str(), PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
 	return buf;
-}
-
-
-char* ReadPHYSFSFile(std::string path) {
-	signed long long l = -1;
-	return ReadPHYSFSFileLength(path, l);
 }

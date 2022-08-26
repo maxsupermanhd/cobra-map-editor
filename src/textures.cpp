@@ -13,7 +13,7 @@ bool GetTexture(std::string path, Texture& t) {
 		return true;
 	};
 	signed long long fileLength = -1;
-	char* fileData = ReadPHYSFSFileLength(path, fileLength);
+	char* fileData = ReadPHYSFSFile(path, &fileLength);
 	if(fileData == NULL) {
 		return false;
 	}
