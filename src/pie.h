@@ -60,7 +60,7 @@ public:
 	// starts from 0! level 1 becomes 0 etc!
 	int levelscount = 0;
 	PIEmodel();
-	bool ReadPIE(std::string path);
+	bool ReadPIE(char* content);
 	~PIEmodel();
 };
 

@@ -3,11 +3,13 @@
 #include <raylib.h>
 
 #include "misc.h"
+#include "resources.h"
 
 #include <string>
 #include <cstring>
 #include <map>
 #include <errno.h>
+#include <string.h>
 
 void PIElevel::InitAtZero() {
 	this->points = nullptr;
@@ -61,56 +63,32 @@ PIEmodel::~PIEmodel() {
 PIEmodel::PIEmodel() {
 }
 
-class AutoFreeFileHandle {
-public:
-	FILE* f = NULL;
-	AutoFreeFileHandle(FILE* f) : f(f) {}
-	~AutoFreeFileHandle() {
-		if(f) {
-			fclose(f);
-		}
-	}
-	AutoFreeFileHandle() = delete;
-	AutoFreeFileHandle(const AutoFreeFileHandle&) = delete;
-	AutoFreeFileHandle& operator=(const AutoFreeFileHandle&) = delete;
-};
-
-bool PIEmodel::ReadPIE(std::string path) {
-	AutoFreeFileHandle fh(fopen(path.c_str(), "r"));
-	FILE* f = fh.f; // this is dirty hack to not call fclose on every return
-	if(f == NULL) {
-		TraceLog(LOG_ERROR, "Error opening file [%s]: %s", strerror(errno));
-		return false;
-	}
-	TraceLog(LOG_TRACE, "Loading PIE [%s]", path.c_str());
-
-	int ret = fscanf(f, "PIE %d\nTYPE %d\n", &this->ver, &this->type);
+bool PIEmodel::ReadPIE(char* content) {
+	int ret = sscanf(content, "PIE %d\nTYPE %d\n", &this->ver, &this->type);
 	if(ret != 2) {
 		TraceLog(LOG_ERROR, "Failed to parse first 2 lines of PIE, ret %d", ret);
 		return false;
 	}
 
+	char* str = strchr(content, '\n');
+	if(str == NULL) {
+		return false;
+	}
+	str++;
+
 	int snum = 3;
 	int nowlevel = -1;
-	char* cstr = NULL;
-	size_t len = 0;
-	ssize_t read = 0;
-	while((read = getline(&cstr, &len, f)) != -1) {
-		if(cstr == NULL) {
-			TraceLog(LOG_FATAL, "Something really bad happened to getline... [%s]", strerror(errno));
-			return false;
+	while(1) {
+		str = strchr(str, '\n');
+		if(str == NULL) {
+			return true;
 		}
-		std::string str = std::string(cstr);
-
-		free(cstr);  // this will result in a bunch of reallocations but oh well
-		cstr = NULL; // however now I don't need to clean anything up on every
-		len = 0;     // return so I guess it's a win for me...
-
+		str++;
 		if(!strncmpl(str, "INTERPOLATE")) {
 			int v;
 			int r = sscanf(str, "INTERPOLATE %d", &v);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] INTERPOLATE line %d ret %d", path.c_str(), snum, r);
+				TraceLog(LOG_ERROR, "PIE READ INTERPOLATE line %d ret %d", snum, r);
 				return false;
 			}
 			this->interpolate = v;
@@ -118,7 +96,7 @@ bool PIEmodel::ReadPIE(std::string path) {
 			char* texname; // technically we must free that pointer
 			int r = sscanf(str, "TEXTURE %*d %ms %d %d", &texname, &this->tsizeh, &this->tsizew);
 			if(r != 3) { // but what happens if that pointer never actually allocated
-				TraceLog(LOG_ERROR, "PIE READ [%s] TEXTURE line %d ret %d", path.c_str(), snum, r);
+				TraceLog(LOG_ERROR, "PIE READ TEXTURE line %d ret %d", snum, r);
 				// free(texname); double free?
 				return false;
 			}
@@ -128,7 +106,7 @@ bool PIEmodel::ReadPIE(std::string path) {
 			char* texname;
 			int r = sscanf(str, "NORMALMAP %*d %ms", &texname);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] NORMALMAP line %d ret %d", path.c_str(), snum, r);
+				TraceLog(LOG_ERROR, "PIE READ NORMALMAP line %d ret %d", snum, r);
 				return false;
 			}
 			this->normalname = std::string(texname);
@@ -137,7 +115,7 @@ bool PIEmodel::ReadPIE(std::string path) {
 			char* texname;
 			int r = sscanf(str, "SPECULARMAP %*d %ms", &texname);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] SPECULARMAP line %d ret %d", path.c_str(), snum, r);
+				TraceLog(LOG_ERROR, "PIE READ SPECULARMAP line %d ret %d", snum, r);
 				return false;
 			}
 			this->specularname = std::string(texname);
@@ -147,11 +125,11 @@ bool PIEmodel::ReadPIE(std::string path) {
 			char* file;
 			int r = sscanf(str, "EVENT %d %ms", &t, &file);
 			if(r != 2) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] EVENT line %d ret %d", path.c_str(), snum, r);
+				TraceLog(LOG_ERROR, "PIE READ EVENT line %d ret %d", snum, r);
 				return false;
 			}
 			if(t < 0 || t > 3) {
-				TraceLog(LOG_ERROR, "Not supported PIE [%s] EVENT %d line %d ret %d", path.c_str(), t, snum, r);
+				TraceLog(LOG_ERROR, "Not supported PIE [%s] EVENT %d line %d ret %d", t, snum, r);
 			} else {
 				this->events[t] = std::string(file);
 			}
@@ -159,13 +137,13 @@ bool PIEmodel::ReadPIE(std::string path) {
 		} else if(!strncmpl(str, "LEVELS ")) {
 			int r = sscanf(str, "LEVELS %d", &this->levelscount);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] LEVELS line %d ret %d", path.c_str(), snum, r);
+				TraceLog(LOG_ERROR, "PIE READ LEVELS line %d ret %d", snum, r);
 				return false;
 			}
 			this->levels = (PIElevel*)malloc(sizeof(PIElevel)*this->levelscount);
 			if(this->levels == NULL) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] LEVELS %d line %d ret %d", path.c_str(), this->levelscount, snum, r);
-				TraceLog(LOG_FATAL, "Failed to allocate levels!!! [%s]", strerror(errno));
+				TraceLog(LOG_ERROR, "PIE READ LEVELS %d line %d ret %d", this->levelscount, snum, r);
+				TraceLog(LOG_ERROR, "Failed to allocate levels!!! [%s]", strerror(errno));
 				return false;
 			}
 			for(int i = 0; i < this->levelscount; i++) {
@@ -175,7 +153,7 @@ bool PIEmodel::ReadPIE(std::string path) {
 			int newlevel = -1;
 			int r = sscanf(str, "LEVEL %d", &nowlevel);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] LEVEL line %d ret %d", path.c_str(), snum, r);
+				TraceLog(LOG_ERROR, "PIE READ LEVEL line %d ret %d", snum, r);
 				return false;
 			}
 			nowlevel = nowlevel - 1;
@@ -184,65 +162,57 @@ bool PIEmodel::ReadPIE(std::string path) {
 		} else if(!strncmpl(str, "SHADERS ")) {
 		} else if(!strncmpl(str, "POINTS ")) {
 			if(nowlevel < 0) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] POINTS line %d level is outside of logical range (%d)", nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ POINTS line %d level is outside of logical range (%d)", nowlevel);
 				return false;
 			}
 			int r = sscanf(str, "POINTS %d", &this->levels[nowlevel].pointscount);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] POINTS line %d ret %d level %d", path.c_str(), snum, r, nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ POINTS line %d ret %d level %d", snum, r, nowlevel);
 				return false;
 			}
 			this->levels[nowlevel].points = (Vector3*)malloc(sizeof(Vector3)*this->levels[nowlevel].pointscount);
 			if(this->levels[nowlevel].points == NULL) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] POINTS line %d level %d malloc failed, no memory left?!", path.c_str(), snum, nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ POINTS line %d level %d malloc failed, no memory left?!", snum, nowlevel);
 				return false;
 			}
 			TraceLog(LOG_TRACE, "Allocated points for level %d at %#016x", nowlevel, this->levels[nowlevel].points);
-			char* pstr = NULL;
-			size_t plen = 0;
-			ssize_t pread;
 			for(int pointnum = 0; pointnum < this->levels[nowlevel].pointscount; pointnum++) {
-				pread = getline(&pstr, &plen, f);
-				if(pread == -1) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POINTS line %d level %d getline failed %d %d %s", path.c_str(), snum, pread, nowlevel, errno, strerror(errno));
-					free(pstr);
+				str = strchr(str, '\n');
+				if(str == NULL) {
+					TraceLog(LOG_ERROR, "PIE READ POINTS unexpected eof, line %d level %d", snum, nowlevel);
 					return false;
 				}
-				int pr = sscanf(pstr, "\t%f %f %f", &this->levels[nowlevel].points[pointnum].x, &this->levels[nowlevel].points[pointnum].y, &this->levels[nowlevel].points[pointnum].z);
+				str++;
+				int pr = sscanf(str, "\t%f %f %f", &this->levels[nowlevel].points[pointnum].x, &this->levels[nowlevel].points[pointnum].y, &this->levels[nowlevel].points[pointnum].z);
 				if(pr != 3) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POINTS line %d level %d sscanf failed %d", path.c_str(), snum, nowlevel, pr);
-					free(pstr);
+					TraceLog(LOG_ERROR, "PIE READ POINTS line %d level %d sscanf failed %d", snum, nowlevel, pr);
 					return false;
 				}
 				snum++;
 			}
-			free(pstr);
 		} else if(!strncmpl(str, "NORMALS ")) {
 			if(nowlevel < 0) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] NORMALS line %d level is outside of logical range (%d)", nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ NORMALS line %d level is outside of logical range (%d)", nowlevel);
 				return false;
 			}
 			int r = sscanf(str, "NORMALS %d", &this->levels[nowlevel].normalscount);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] NORMALS line %d ret %d level %d", path.c_str(), snum, r, nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ NORMALS line %d ret %d level %d", snum, r, nowlevel);
 				return false;
 			}
 			this->levels[nowlevel].normals = (Vector3*)malloc(sizeof(Vector3)*this->levels[nowlevel].normalscount*3);
 			if(this->levels[nowlevel].normals == NULL) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] NORMALS line %d ret %d level %d malloc failed, no memory left?!", path.c_str(), snum, r, nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ NORMALS line %d ret %d level %d malloc failed, no memory left?!", snum, r, nowlevel);
 				return false;
 			}
-			char* pstr = NULL;
-			size_t plen = 0;
-			ssize_t pread;
 			for(int normalnum = 0; normalnum < this->levels[nowlevel].normalscount; normalnum++) {
-				pread = getline(&pstr, &plen, f);
-				if(pread != -1) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] NORMALS line %d level %d getline failed %d %s", path.c_str(), snum, nowlevel, errno, strerror(errno));
-					free(pstr);
+				str = strchr(str, '\n');
+				if(str == NULL) {
+					TraceLog(LOG_ERROR, "PIE READ NORMALS unexpected eof, line %d level %d", snum, nowlevel);
 					return false;
 				}
-				int pr = sscanf(pstr, "\t%f %f %f %f %f %f %f %f %f",
+				str++;
+				int pr = sscanf(str, "\t%f %f %f %f %f %f %f %f %f",
 						&this->levels[nowlevel].normals[normalnum*3+0].x, 
 						&this->levels[nowlevel].normals[normalnum*3+0].y, 
 						&this->levels[nowlevel].normals[normalnum*3+0].z, 
@@ -253,61 +223,52 @@ bool PIEmodel::ReadPIE(std::string path) {
 						&this->levels[nowlevel].normals[normalnum*3+2].y, 
 						&this->levels[nowlevel].normals[normalnum*3+2].z);
 				if(pr != 9) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] NORMALS line %d level %d sscanf failed %d", path.c_str(), snum, nowlevel, pr);
-					free(pstr);
+					TraceLog(LOG_ERROR, "PIE READ NORMALS line %d level %d sscanf failed %d", snum, nowlevel, pr);
 					return false;
 				}
 				snum++;
 			}
-			free(pstr);
 		} else if(!strncmpl(str, "POLYGONS ")) {
 			if(nowlevel < 0) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d level is outside of logical range (%d)", nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d level is outside of logical range (%d)", nowlevel);
 				return false;
 			}
 			int r = sscanf(str, "POLYGONS %d", &this->levels[nowlevel].polygonscount);
 			if(r != 1) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d ret %d level %d", path.c_str(), snum, r, nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d ret %d level %d", snum, r, nowlevel);
 				return false;
 			}
 			this->levels[nowlevel].polygons = (PIEpolygon*)malloc(sizeof(PIEpolygon)*this->levels[nowlevel].polygonscount);
 			if(this->levels[nowlevel].polygons == NULL) {
-				TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d ret %d level %d malloc failed, no memory left?!", path.c_str(), snum, r, nowlevel);
+				TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d ret %d level %d malloc failed, no memory left?!", snum, r, nowlevel);
 				return false;
 			}
-			char* pstr = NULL;
-			size_t plen = 0;
-			ssize_t pread;
 			for(int polygonnum = 0; polygonnum < this->levels[nowlevel].polygonscount; polygonnum++) {
-				pread = getline(&pstr, &plen, f);
-				if(pread == -1) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d level %d getline failed %d %s", path.c_str(), snum, nowlevel, errno, strerror(errno));
-					free(pstr);
+				str = strchr(str, '\n');
+				if(str == NULL) {
+					TraceLog(LOG_ERROR, "PIE READ NORMALS unexpected eof, line %d level %d", snum, nowlevel);
 					return false;
 				}
-				int pr = sscanf(pstr, "\t%d %d", &this->levels[nowlevel].polygons[polygonnum].flags, &this->levels[nowlevel].polygons[polygonnum].pcount);
+				str++;
+				int pr = sscanf(str, "\t%d %d", &this->levels[nowlevel].polygons[polygonnum].flags, &this->levels[nowlevel].polygons[polygonnum].pcount);
 				if(pr != 2) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d level %d sscanf flag failed %d", path.c_str(), snum, nowlevel, pr);
-					free(pstr);
+					TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d level %d sscanf flag failed %d", snum, nowlevel, pr);
 					return false;
 				}
 				int ffff = this->levels[nowlevel].polygons[polygonnum].flags;
 				if(ffff != 200 && ffff != 4200) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d level %d flag is not 200 %d", path.c_str(), snum, nowlevel, this->levels[nowlevel].polygons[polygonnum].flags);
-					free(pstr);
+					TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d level %d flag is not 200 %d", snum, nowlevel, this->levels[nowlevel].polygons[polygonnum].flags);
 					return false;
 				}
 				if(this->levels[nowlevel].polygons[polygonnum].pcount != 3) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d level %d wrong polygon pcount %d", path.c_str(), snum, nowlevel, this->levels[nowlevel].polygons[polygonnum].pcount);
-					free(pstr);
+					TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d level %d wrong polygon pcount %d", snum, nowlevel, this->levels[nowlevel].polygons[polygonnum].pcount);
 					return false;
 				}
-				int prr = sscanf(pstr, "\t%*d %*d %d %d %d", &this->levels[nowlevel].polygons[polygonnum].porder[0],
+				int prr = sscanf(str, "\t%*d %*d %d %d %d", &this->levels[nowlevel].polygons[polygonnum].porder[0],
 															 &this->levels[nowlevel].polygons[polygonnum].porder[1],
 															 &this->levels[nowlevel].polygons[polygonnum].porder[2]);
 				if(prr != 3) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d level %d sscanf porder failed %d", path.c_str(), snum, nowlevel, prr);
-					free(pstr);
+					TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d level %d sscanf porder failed %d", snum, nowlevel, prr);
 					return false;
 				}
 				const char* polyformat;
@@ -316,7 +277,7 @@ bool PIEmodel::ReadPIE(std::string path) {
 				} else {
 					polyformat = "\t%*d %*d %*d %*d %*d %f %f %f %f %f %f";
 				}
-				int prrr = sscanf(pstr, polyformat,
+				int prrr = sscanf(str, polyformat,
 					&this->levels[nowlevel].polygons[polygonnum].texcoords[0],
 					&this->levels[nowlevel].polygons[polygonnum].texcoords[1],
 					&this->levels[nowlevel].polygons[polygonnum].texcoords[2],
@@ -324,13 +285,11 @@ bool PIEmodel::ReadPIE(std::string path) {
 					&this->levels[nowlevel].polygons[polygonnum].texcoords[4],
 					&this->levels[nowlevel].polygons[polygonnum].texcoords[5]);
 				if(prrr != 6) {
-					TraceLog(LOG_ERROR, "PIE READ [%s] POLYGONS line %d level %d sscanf texcoords failed %d", path.c_str(), snum, nowlevel, prrr);
-					free(pstr);
+					TraceLog(LOG_ERROR, "PIE READ POLYGONS line %d level %d sscanf texcoords failed %d", snum, nowlevel, prrr);
 					return false;
 				}
 				snum++;
 			}
-			free(pstr);
 		} else if(!strncmpl(str, "CONNECTORS ")) {
 		} else if(!strncmpl(str, "ANIMOBJECT ")) {
 		}
@@ -346,11 +305,17 @@ PIEmodel* GetModel(std::string filename) {
 		return loaded_models[filename];
 	}
 	PIEmodel* l = new PIEmodel();
-	if(!l->ReadPIE(filename)) {
+	char* c = ReadPHYSFSFile(filename.c_str());
+	if(c == NULL) {
+		TraceLog(LOG_ERROR, "Failed to load model [%s]", filename.c_str());
+		return NULL;
+	}
+	if(!l->ReadPIE(c)) {
 		TraceLog(LOG_ERROR, "Failed to load model [%s]", filename.c_str());
 		return NULL;
 	}
 	loaded_models[filename] = l;
+	free(c);
 	return l;
 }
 

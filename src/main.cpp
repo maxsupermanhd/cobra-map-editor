@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
 	World w = World();
 
-	int genid = w.AddObject("./data/blbrbgen.pie");
+	int genid = w.AddObject("/structs/blbrbgen.pie");
 	TraceLog(LOG_INFO, "Loaded object, id: %d", genid);
 
 	static bool wPreferences = false;
