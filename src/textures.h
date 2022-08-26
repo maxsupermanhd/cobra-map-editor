@@ -2,5 +2,7 @@
 
 #include <raylib.h>
 
-Texture GetTexture(const char* path);
+#include <string>
+
+bool GetTexture(std::string path, Texture& t);
 void UnloadTextures();

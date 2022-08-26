@@ -45,15 +45,19 @@ int World::AddObject(std::string filepath) {
 	PIEmodel* model = GetModel(filepath);
 	if(model == NULL) {
 		TraceLog(LOG_ERROR, "Failed to load PIE model from %s", filepath.c_str());
-		return false;
+		return -1;
 	}
 	Mesh mesh = {0};
 	if(!LoadMeshFromPIE(model, &mesh)) {
 		TraceLog(LOG_ERROR, "Failed to load mesh from pie, file %s", filepath.c_str());
-		return false;
+		return -1;
 	}
 	Material mat = LoadMaterialDefault();
-	mat.maps[MATERIAL_MAP_DIFFUSE].texture = GetTexture("./data/page-7-barbarians-arizona.png");
+	std::string tname = "/texpages/" + model->texturename;
+	if(!GetTexture(tname, mat.maps[MATERIAL_MAP_DIFFUSE].texture)) {
+		TraceLog(LOG_ERROR, "Failed to load texture %s for object %s", tname.c_str(), filepath.c_str());
+		return -1;
+	}
 	for(unsigned int i = 0; i < mesh.vertexCount; i++) {
 		mesh.texcoords[i*2+0] /= mat.maps[MATERIAL_MAP_DIFFUSE].texture.height;
 		mesh.texcoords[i*2+1] /= mat.maps[MATERIAL_MAP_DIFFUSE].texture.width;
@@ -66,5 +70,5 @@ int World::AddObject(std::string filepath) {
 	o.id = this->nextObjectId;
 	this->nextObjectId++;
 	this->objects.push_back(o);
-	return true;
+	return o.id;
 }
